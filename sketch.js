@@ -1,161 +1,155 @@
-//Global Variables
-var monkey, monkeyimg ,monkey_still ;
-var jungle, jungleimg ;
+//assing the global variables so that we can assess it in our functions
+var gameState;
+var PLAY = 1;
+var END = 0
+var monkey;
+var monkey_running;
+var player;
+var banana;
+var obstacle;
+var obstacleImage;
+var FoodGroup;
+var obstacleGroup;
+var score;
 var ground;
-var banana, bananaimg, bananagroup ;
-var stone, stoneimg ;
-var eat, score, stonegroup ;
-var restart, restartimg, gameOver, gameimg ;
-var gameState ;
+var score = 0;
+var jungle;
+var gameover;
 
 function preload(){
   
-  jungleimg = loadImage("jungle.jpg");
-  stoneimg = loadImage("stone.png");
-  bananaimg = loadImage("Banana.png");
-  restartimg = loadImage("restart.png");
-  gameimg = loadImage("gameOver.png");
-  monkey_still=loadImage("Monkey_03.png");
-  monkeyimg = loadAnimation("Monkey_01.png","Monkey_02.png","Monkey_03.png","Monkey_04.png","Monkey_05.png","Monkey_06.png","Monkey_07.png","Monkey_08.png","Monkey_09.png","Monkey_10.png");
   
+  monkey_running = loadAnimation("sprite_0.png","sprite_1.png","sprite_2.png","sprite_3.png","sprite_4.png","sprite_5.png","sprite_6.png","sprite_7.png","sprite_8.png");
+  
+  bananaImage = loadImage("banana.png");
+  obstacleImage = loadImage("obstacle.png");
+
+  jungle_image = loadImage("jungle.jpg");
+  
+  gameover_image = loadImage("gameOver.png");
 }
 
 function setup() {
+createCanvas(1000,800);
   
-  createCanvas(800,400);
+//creating monkey
+ monkey = createSprite(80,340,20,20);
+ monkey.addAnimation("running", monkey_running);  
+ monkey.scale=0.1;
+ monkey.setCollider("circle",0,0,monkey.width / 3);  
 
-  jungle=createSprite(400,150);
-  jungle.addImage(jungleimg);
-  jungle.velocityX=-4;
-  jungle.scale=1.2;
   
-  ground = createSprite(400,365,800,10);
-  ground.visible=false;
+//creating ground
+ground=createSprite(200,350,800,20);
+ground.visible = false;  
+//creating bananaGroup
+bananaGroup = createGroup();  
+  
+//creating obstacleGroup
+obstacleGroup = createGroup();  
+  
+//setting gameState to play  
+  gameState = PLAY;
+//creating jungle
+  jungle = createSprite(200,200,400,400);
+  jungle.addImage(jungle_image);
+  jungle.scale = 0.55;
+  jungle.depth = -50;
+  jungle.velocityX = -1;
+  
+  gameover = createSprite (200,200,100,100);
+  gameover.addImage(gameover_image);
+  gameover.visible = false;
 
-  monkey = createSprite(200,320,0,0);
-  monkey.addAnimation("running",monkeyimg);
-  monkey.scale=0.14;
-  monkey.addAnimation("still",monkey_still);
-  
-  restart = createSprite(400,200,0,0);
-  restart.addImage(restartimg);
-  gameOver = createSprite(400,250,0,0);
-  gameOver.addImage(gameimg);
-  gameOver.visible=false;
-  restart.visible=false;
-  
-  bananagroup = new Group();
-  stonegroup = new Group();
-  
-  gameState = "play";
-  
-  eat = 0;
-  score = 0;
-  
+
 }
 
-function draw(){
+function draw() {
   
-  if(keyDown("space") && monkey.collide(ground) && gameState==="play"){
-    monkey.velocityY=-16;
-  } 
-  monkey.velocityY=monkey.velocityY+0.8;
-  monkey.collide(ground);
+background("white");
+//adding ground 
   
-  //for conditions when game state is in play
- if(gameState==="play"){
+//adding gravity 
+monkey.velocityY=monkey.velocityY+0.5;
+//making monkey collid the ground  
+monkey.collide(ground); 
+
   
-   if (jungle.x < 200){
-    jungle.x = jungle.width/2;
-  }
-   
-   //to spawn bananas
-  if(frameCount%120===0){
-    bananas();     
-  } 
-  
-   //to spawn rocks
-  if(frameCount%200===0){
-    obstacles();  
+//destroying banana when monkey is touching them
+if (bananaGroup.collide(monkey)) {
+      bananaGroup.destroyEach();
+     monkey.scale = monkey.scale + 0.025; 
+    }
+//making monkey jump  
+if(keyDown("space") && monkey.y >= 300){
+      monkey.velocityY= -15;
   } 
   
-  //for winning and loosing conditions
-   
-  if(bananagroup.isTouching(monkey)){
-     bananagroup.destroyEach();
-     eat=eat+1;
+  if(gameState === PLAY){
+    play(); 
   }
+
+if(obstacleGroup.isTouching(monkey)){  
+monkey.scale = monkey.scale - 0.05;
+obstacleGroup.destroyEach();
+}
   
-  if(stonegroup.isTouching(monkey)){
-    
-    stonegroup.destroyEach();
-   
-    gameState = "end";
-     
-  }
-  
+if(monkey.scale <= 0){
+end();
+gameState = END;  
+monkey.scale = 0;  
+}
+
+ if(jungle.x < 150){
+ jungle.x = 250;
+ }
+ drawSprites();
+textSize(25); 
+fill("black");
+text("survival Time:" + score,10,50); 
+} 
  
-   
- } if(gameState==="end"){
-  
-   jungle.velocityX=0;
-   
-   monkey.changeAnimation("still",monkey_still);
-
-   bananagroup.destroyEach();
-   stonegroup.destroyEach();
-   eat = 0;
-   score = 0;
-   
-   gameOver.visible=true;
-   restart.visible=true;
-   
+function spawnbanana(){
+ if(frameCount %100 ===0){
+ banana=createSprite(400,Math.round(random(120,200)),20,10);
+ banana.scale=0.1;  
+ banana.velocityX=-2 
+ banana.lifetime=300;
+ banana.addImage(bananaImage);
+ bananaGroup.add(banana);    
  }
+}
   
-  //   to restart the game
-  if(mousePressedOver(restart) &&  gameState==="end"){
-    
-   gameState="play";
-   monkey.changeAnimation("running",monkeyimg); 
-   gameOver.visible=false;
-   restart.visible=false;
-   jungle.velocityX=-4; 
-   eat=0;
-   score=0;
-   
- }
-  
-  drawSprites();  
-  
-  //for displaying score
-  fill("yellow");
-  textSize(20);
-  if(frameCount%10===0){
-     score=score+1;
+function spawnObstacle(){
+if(frameCount % 150   === 0)
+{
+obstacle=createSprite(400,330,20,10);
+obstacle.setCollider("circle",0,0,150);  
+obstacle.addImage(obstacleImage);
+obstacle.lifetime=300;  
+obstacle.scale=0.1;  
+obstacle.velocityX=-2;
+obstacleGroup.add(obstacle);
   }
-  text("Score= "+score,520,30 ); 
-  text("Banana's Eaten : "+ eat,520,55);
-  
-}
-
-function bananas(){
-  
- banana =  createSprite(815,random(150,250),0,0);
- banana.addImage(bananaimg); 
- banana.scale=0.06;
- banana.velocityX=-(6+score/70);
- banana.lifetime=220;
- bananagroup.add(banana); 
-  
-}
-
-function obstacles(){
-  
-  stones = createSprite(815,360,0,0);
-  stones.addImage(stoneimg);
-  stones.scale=0.2;
-  stones.velocityX=-(6+score/70);
-  stones.lifetime=220;
-  stonegroup.add(stones);
-
 }  
+
+function play(){
+score = Math.ceil(frameCount/frameRate());  
+  spawnbanana();
+ spawnObstacle(); 
+  
+}
+
+function end (){
+ ground.velocityX=0; 
+obstacle.velocityX=0;
+ obstacleGroup.setVelocityXEach(0);
+bananaGroup.setVelocityXEach(0);
+obstacleGroup.setLifetimeEach(-1);
+bananaGroup.setLifetimeEach(-1);
+ monkey.velocityY = 0;
+  gameover.visible = true;
+  jungle.velocityX = 0;
+}
+
+
